@@ -1,0 +1,163 @@
+product 
+from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QMessageBox, QInputDialog, QTableWidget, QTableWidgetItem, QDialog
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QImage, QPixmap
+import qrcode  # Make sure you have the qrcode library installed
+import io
+import os
+from database import db  # Assuming db is your database instance
+
+
+class ProductManagementWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("إدارة المنتجات")
+        self.setGeometry(150, 150, 600, 400)  # Adjust size if needed
+        self.initUI()
+
+    def initUI(self):
+        layout = QVBoxLayout()
+
+        title = QLabel("🛠️ إدارة المنتجات", self)
+        title.setStyleSheet("font-size: 18px; font-weight: bold;")
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
+
+        # Control buttons in the product management window
+        buttons = {
+            "عرض جميع المنتجات": self.show_all_products,
+            "إضافة منتج جديد": self.add_product,
+            "تعديل منتج": self.edit_product,
+            "حذف منتج": self.delete_product,
+            "إنشاء QR كود": self.generate_qr,
+            "العودة للقائمة الرئيسية": self.close
+        }
+
+        for label, func in buttons.items():
+            btn = QPushButton(label, self)
+            btn.clicked.connect(func)
+            layout.addWidget(btn)
+
+        # Adding a table to display products
+        self.product_table = QTableWidget(self)
+        self.product_table.setColumnCount(4)
+        self.product_table.setHorizontalHeaderLabels(["الكود", "الاسم", "السعر", "الكمية"])
+
+        # Add table to layout
+        layout.addWidget(self.product_table)
+        
+        self.setLayout(layout)
+
+    def show_all_products(self):
+        # Fetch all products from the database
+        products = db.get_all_products()
+
+        # Clear current table data
+        self.product_table.setRowCount(0)
+
+        # Insert products into the table
+        for row, product in enumerate(products):
+            self.product_table.insertRow(row)
+            for col, value in enumerate(product):
+                self.product_table.setItem(row, col, QTableWidgetItem(str(value)))
+
+    def add_product(self):
+        # Add a new product
+        code, ok1 = QInputDialog.getText(self, "إضافة منتج", "كود المنتج:")
+        if not ok1 or code in [prod[0] for prod in db.get_all_products()]:
+            QMessageBox.warning(self, "خطأ", "المنتج موجود بالفعل أو الكود غير صالح.")
+            return
+
+        name, ok2 = QInputDialog.getText(self, "إضافة منتج", "اسم المنتج:")
+        if not ok2:
+            return
+
+        price, ok3 = QInputDialog.getDouble(self, "إضافة منتج", "سعر المنتج:", decimals=2)
+        if not ok3:
+            return
+
+        quantity, ok4 = QInputDialog.getInt(self, "إضافة منتج", "الكمية:")
+        if not ok4:
+            return
+
+        # Add product to the database
+        db.add_product(code, name, price, quantity)
+        QMessageBox.information(self, "نجاح", "تمت إضافة المنتج بنجاح!")
+        
+        # Refresh table to show new product
+        self.show_all_products()
+
+    def edit_product(self):
+        # Edit a product
+        code, ok = QInputDialog.getText(self, "تعديل منتج", "ادخل كود المنتج:")
+        if ok and code:
+            product = db.get_product(code)
+            if product:
+                name, _ = QInputDialog.getText(self, "تعديل اسم", "اسم المنتج:", text=product[1])
+                price, _ = QInputDialog.getDouble(self, "تعديل السعر", "سعر المنتج:", value=product[2])
+                quantity, _ = QInputDialog.getInt(self, "تعديل الكمية", "الكمية:", value=product[3])
+
+                # Update the product in the database
+                db.update_product(code, name, price, quantity)  # Fixed issue here
+                QMessageBox.information(self, "نجاح", "تم التعديل بنجاح.")
+                
+                # Refresh table to show updated product
+                self.show_all_products()
+            else:
+                QMessageBox.warning(self, "خطأ", "كود المنتج غير موجود.")
+        else:
+            QMessageBox.warning(self, "خطأ", "كود المنتج غير صالح.")
+
+    def delete_product(self):
+        # Delete a product
+        code, ok = QInputDialog.getText(self, "حذف منتج", "ادخل كود المنتج:")
+        if ok and code:
+            product = db.get_product(code)
+            if product:
+                db.cursor.execute("DELETE FROM products WHERE code = ?", (code,))
+                db.conn.commit()
+                QMessageBox.information(self, "تم", "تم حذف المنتج.")
+                
+                # Refresh table after deletion
+                self.show_all_products()
+            else:
+                QMessageBox.warning(self, "خطأ", "كود المنتج غير موجود.")
+        else:
+            QMessageBox.warning(self, "خطأ", "كود المنتج غير صالح.")
+
+    def generate_qr(self):
+        # Generate QR code for product
+        code, ok = QInputDialog.getText(self, "إنشاء QR كود", "ادخل كود المنتج:")
+        if ok and code:
+            product = db.get_product(code)
+            if product:
+                qr_data = f"كود المنتج: {product[0]}\nالاسم: {product[1]}\nالسعر: {product[2]}\nالكمية: {product[3]}"
+                # Generate QR code
+                qr = qrcode.make(qr_data)
+                
+                # Save QR code to file
+                filename = f"{product[1]}_{product[0]}.png"  # Product name and code as filename
+                qr.save(filename)  # Save in the current directory
+                
+                QMessageBox.information(self, "نجاح", f"تم حفظ QR كود المنتج باسم {filename}!")
+                
+                # Optionally, display the QR code in a dialog
+                byte_array = io.BytesIO()
+                qr.save(byte_array, format='PNG')
+                byte_array.seek(0)
+                qr_image = QImage()
+                qr_image.loadFromData(byte_array.read())
+                qr_pixmap = QPixmap(qr_image)
+                
+                qr_dialog = QDialog(self)
+                qr_dialog.setWindowTitle("QR كود")
+                qr_layout = QVBoxLayout()
+                
+                qr_label = QLabel()
+                qr_label.setPixmap(qr_pixmap)
+                
+                qr_layout.addWidget(qr_label)
+                qr_dialog.setLayout(qr_layout)
+                qr_dialog.exec_()
+            else:
+                QMessageBox.warning(self, "خطأ", "كود المنتج غير موجود.")

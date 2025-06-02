@@ -1,0 +1,78 @@
+database 
+import sqlite3
+
+class Database:
+    def __init__(self):
+        self.conn = sqlite3.connect('products.db')
+        self.cursor = self.conn.cursor()
+        self.create_tables()
+
+    def create_tables(self):
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS products (
+                                code TEXT PRIMARY KEY,
+                                name TEXT,
+                                price REAL,
+                                quantity INTEGER)''')
+        
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS invoices (
+                                invoice_id TEXT PRIMARY KEY,
+                                date TEXT,
+                                member_id TEXT,
+                                total REAL,
+                                discount REAL,
+                                net_total REAL)''')
+
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS invoice_items (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                invoice_id TEXT,
+                                product_code TEXT,
+                                name TEXT,
+                                price REAL,
+                                quantity INTEGER,
+                                total_price REAL)''')
+        self.conn.commit()
+
+    def add_product(self, code, name, price, quantity):
+        self.cursor.execute("INSERT INTO products (code, name, price, quantity) VALUES (?, ?, ?, ?)",
+                            (code, name, price, quantity))
+        self.conn.commit()
+
+    def get_product(self, product_code):
+        self.cursor.execute("SELECT * FROM products WHERE code = ?", (product_code,))
+        return self.cursor.fetchone()
+
+    def get_all_products(self):
+        self.cursor.execute("SELECT * FROM products")
+        return self.cursor.fetchall()
+
+    def update_product(self, code, name, price, quantity):
+        self.cursor.execute('''UPDATE products SET name = ?, price = ?, quantity = ? WHERE code = ?''',
+                            (name, price, quantity, code))
+        self.conn.commit()
+
+    def save_invoice(self, invoice_id, date, member_id, total, discount, net_total, items):
+        self.cursor.execute('''INSERT INTO invoices (invoice_id, date, member_id, total, discount, net_total)
+                               VALUES (?, ?, ?, ?, ?, ?)''',
+                            (invoice_id, date, member_id, total, discount, net_total))
+
+        for item in items:
+            self.cursor.execute('''INSERT INTO invoice_items (invoice_id, product_code, name, price, quantity, total_price)
+                                   VALUES (?, ?, ?, ?, ?, ?)''',
+                                (invoice_id, item['code'], item['name'], item['price'], item['quantity'], item['total_price']))
+        self.conn.commit()
+
+    def update_product_quantity(self, code, sold_quantity):
+        self.cursor.execute("SELECT quantity FROM products WHERE code = ?", (code,))
+        result = self.cursor.fetchone()
+        if result:
+            new_quantity = max(result[0] - sold_quantity, 0)
+            self.cursor.execute("UPDATE products SET quantity = ? WHERE code = ?", (new_quantity, code))
+            self.conn.commit()
+
+    def close(self):
+        self.conn.close()
+
+# تعريف الكائن
+db = Database()
+
+

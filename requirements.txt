@@ -1,0 +1,14 @@
+PyQt5>=5.15.0
+opencv-python==4.8.0.76
+numpy==1.24.3
+pillow==10.0.0
+pyzbar==0.1.9
+python-dateutil==2.8.2
+reportlab==4.0.4
+arabic-reshaper==3.0.0
+python-bidi==0.4.2
+pywin32
+pyinstaller
+
+python-barcode
+PyQt5-tools

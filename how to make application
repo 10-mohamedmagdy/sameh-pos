@@ -1,0 +1,34 @@
+فتح main.py وأضف السطر ده في أول سطر:
+
+#!/usr/bin/env python3
+
+يعني يكون أول الملف كده مثلًا:
+
+#!/usr/bin/env python3
+import sys
+from PyQt5.QtWidgets import QApplication, QWidget
+# باقي الكود...
+
+/usr/bin/python3 main.py
+
+(base) mohamedmagdydardar@mohamedmagdydardar-Latitude-3540:~$ nano ~/Desktop/supermarket_app.desktop
+(base) mohamedmagdydardar@mohamedmagdydardar-Latitude-3540:~$ nano ~/Desktop/supermarket_app.desktop
+(base) mohamedmagdydardar@mohamedmagdydardar-Latitude-3540:~$ chmod +x ~/Desktop/supermarket_app.desktop
+(base) mohamedmagdydardar@mohamedmagdydardar-Latitude-3540:~$ cd "/home/mohamedmagdydardar/Desktop/sameh V9"
+(base) mohamedmagdydardar@mohamedmagdydardar-Latitude-3540:~/Desktop/sameh V9$ /usr/bin/python3 main.py
+Warning: Ignoring XDG_SESSION_TYPE=wayland on Gnome. Use QT_QPA_PLATFORM=wayland to run on Wayland anyway.
+(base) mohamedmagdydardar@mohamedmagdydardar-Latitude-3540:~/Desktop/sameh V9$ nano ~/Desktop/supermarket_app2.desktop
+(base) mohamedmagdydardar@mohamedmagdydardar-Latitude-3540:~/Desktop/sameh V9$ chmod +x ~/Desktop/supermarket_app2.desktop
+(base) mohamedmagdydardar@mohamedmagdydardar-Latitude-3540:~/Desktop/sameh V9$ cp ~/Desktop/supermarket_app2.desktop ~/.local/share/applications/
+(base) mohamedmagdydardar@mohamedmagdydardar-Latitude-3540:~/Desktop/sameh V9$ 
+اللي هيتحط جوا 
+[Desktop Entry]
+Name=برنامج السوبر ماركت
+Comment=تشغيل البرنامج
+Exec=/usr/bin/python3 "/home/mohamedmagdydardar/Desktop/sameh V7/main.py"
+Icon="/home/mohamedmagdydardar/Desktop/sameh V7/Self-checkout-pana.png"
+Terminal=false
+Type=Application
+Categories=Utility;
+
+
